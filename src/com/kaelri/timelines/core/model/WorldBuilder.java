@@ -1,3 +1,7 @@
+package com.kaelri.timelines.core.model;
+
+import com.kaelri.timelines.Math2;
+
 import java.awt.*;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
@@ -9,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class Main {
+public class WorldBuilder {
 	public static TriangleTree tree;
 	public static ArrayList<double[]> points = new ArrayList<double[]>();
 
@@ -39,7 +43,7 @@ public class Main {
 		/*
 		TriangleTree a = tree;
 		for (int i = 0; i < 8; i++) {
-			System.out.println(a.triangle.contains(new Vertex(MathManager.normalize(MathManager.add3dall(a.triangle.verts[0].point, a.triangle.verts[1].point, a.triangle.verts[2].point)))));
+			System.out.println(a.triangle.contains(new Vertex(Math2.normalize(Math2.add3dall(a.triangle.verts[0].point, a.triangle.verts[1].point, a.triangle.verts[2].point)))));
 			a = a.outside;
 		}*/
 
@@ -52,7 +56,7 @@ public class Main {
 		HashMap<Vertex, ArrayList<Vertex>> vCoords = new HashMap<>(); 
 		HashMap<Vertex, HashSet<Vertex>> adjacents = new HashMap<>(); 
 		for (TriangleTree t : tree.leafs.leafs) {
-			Vertex x = new Vertex(MathManager.normalize(t.triangle.circumcircle.circumcenter));
+			Vertex x = new Vertex(Math2.normalize(t.triangle.circumcircle.circumcenter));
 			for (Vertex v : t.triangle.verts) {
 				// Add x to v's corners.
 				ArrayList<Vertex> vc = vCoords.get(v);
@@ -110,19 +114,19 @@ public class Main {
 
 	public static void draw(Graphics2D g, ArrayList<Region> regions) {
 		double viewTheta = 1 / 2.0;
-		double[][] rotz = MathManager.fetchrot3d(new double[]{0, 0, 1}, camera);
-		double[] viewVector = MathManager.matmult(rotz, new double[]{1, 0, 0});
+		double[][] rotz = Math2.fetchrot3d(new double[]{0, 0, 1}, camera);
+		double[] viewVector = Math2.matmult(rotz, new double[]{1, 0, 0});
 		for (Region r : regions) {
 			double[][] pp = new double[r.corners.length][];
 			boolean draw = false;
 			for (int i = 0; i < r.corners.length; i++) {
 				pp[i] = r.corners[i].point;
-				if (MathManager.dot3d(pp[i], viewVector) > viewTheta) {
+				if (Math2.dot3d(pp[i], viewVector) > viewTheta) {
 					draw = true;
 				}
 			}
 			if (!draw) continue;
-			pp = MathManager.matmult(pp, rotz);
+			pp = Math2.matmult(pp, rotz);
 			g.setPaint(r.color);
 			drawPolySimple(pp, g);
 		}
@@ -143,9 +147,9 @@ public class Main {
 			points[0] = a;
 			points[numPoints - 1] = b;
 			for (int i = 1; i < numPoints - 1; i++) {
-				points[i] = MathManager.normalize(MathManager.add3d(
-						MathManager.scale3d(a, (numPoints - i) / (numPoints - 1.0)),
-						MathManager.scale3d(b, i / (numPoints - 1.0))));
+				points[i] = Math2.normalize(Math2.add3d(
+						Math2.scale3d(a, (numPoints - i) / (numPoints - 1.0)),
+						Math2.scale3d(b, i / (numPoints - 1.0))));
 			}
 			for (int i = 1; i < numPoints; i++) {
 				x2 = (int)(width / 2 + points[i][1] * width / (3 - points[i][0]));
@@ -259,15 +263,15 @@ class Region {
 	public Region(final Vertex origin, final Vertex... corners) {
 		color = new Color((float)Math.random(), (float)Math.random(), (float)Math.random());
 		final double[] op = origin.point;
-		final double[] zero = MathManager.normalize(MathManager.subtract3d(corners[0].point, MathManager.scale3d(op, MathManager.dot3d(op, corners[0].point))));
+		final double[] zero = Math2.normalize(Math2.subtract3d(corners[0].point, Math2.scale3d(op, Math2.dot3d(op, corners[0].point))));
 		Arrays.sort(corners, new Comparator<Vertex>() {
 			@Override
 			public int compare(Vertex a, Vertex b) {
 				double[] ap = a.point;
 				// Project every vertex onto the plane normal to origin; normalize the projections.
-				ap = MathManager.normalize(MathManager.subtract3d(ap, MathManager.scale3d(op, MathManager.dot3d(op, ap))));
-				double adot = MathManager.dot3d(zero, ap);
-				double across = MathManager.dot3d(op, MathManager.cross3d(zero, ap));
+				ap = Math2.normalize(Math2.subtract3d(ap, Math2.scale3d(op, Math2.dot3d(op, ap))));
+				double adot = Math2.dot3d(zero, ap);
+				double across = Math2.dot3d(op, Math2.cross3d(zero, ap));
 				double aval = 0;
 				if (across >= 0 && adot >= 0) {
 					aval = across;
@@ -280,9 +284,9 @@ class Region {
 				}
 
 				double[] bp = b.point;
-				bp = MathManager.normalize(MathManager.subtract3d(bp, MathManager.scale3d(op, MathManager.dot3d(op, bp))));
-				double bdot = MathManager.dot3d(zero, bp);
-				double bcross = MathManager.dot3d(op, MathManager.cross3d(zero, bp));
+				bp = Math2.normalize(Math2.subtract3d(bp, Math2.scale3d(op, Math2.dot3d(op, bp))));
+				double bdot = Math2.dot3d(zero, bp);
+				double bcross = Math2.dot3d(op, Math2.cross3d(zero, bp));
 				double bval = 0;
 				if (bcross >= 0 && bdot >= 0) {
 					bval = bcross;
@@ -314,7 +318,7 @@ class Vertex {
 		double theta = Math.random() * 2 * Math.PI;
 		double u = Math.random() * 2 - 1;
 		double r = Math.sqrt(1 - u * u);
-		point = MathManager.normalize(new double[] {r * Math.cos(theta), r * Math.sin(theta), u});
+		point = Math2.normalize(new double[] {r * Math.cos(theta), r * Math.sin(theta), u});
 	}
 }
 /**
@@ -347,7 +351,7 @@ class Sphere {
 		this.circumcenter = circumcenter;
 	}
 	public boolean contains(Vertex v) {
-		return MathManager.magnitude3d(MathManager.subtract3d(v.point, circumcenter)) < radius;
+		return Math2.magnitude3d(Math2.subtract3d(v.point, circumcenter)) < radius;
 	}
 }
 
@@ -396,25 +400,25 @@ class Triangle {
 		radius ==
 		|a|*|b|*|a - b|/2/|a x b|
 		*/
-		double[] a = MathManager.subtract3d(verts[0].point, verts[2].point);
-		double[] b = MathManager.subtract3d(verts[1].point, verts[2].point);
-		double la = MathManager.magnitude3d(a);
-		double lb = MathManager.magnitude3d(b);
-		double[] axb = MathManager.cross3d(a, b);
-		double laxb = MathManager.magnitude3d(axb);
-		double[] circumcenter = MathManager.cross3d(MathManager.subtract3d(MathManager.scale3d(b, la * la), MathManager.scale3d(a, lb * lb)), axb);
-		circumcenter = MathManager.add3d(MathManager.scale3d(circumcenter, 1 / (2 * laxb * laxb)), verts[2].point);
-		double radius = la * lb * MathManager.magnitude3d(MathManager.subtract3d(a, b)) / 2 / laxb;
+		double[] a = Math2.subtract3d(verts[0].point, verts[2].point);
+		double[] b = Math2.subtract3d(verts[1].point, verts[2].point);
+		double la = Math2.magnitude3d(a);
+		double lb = Math2.magnitude3d(b);
+		double[] axb = Math2.cross3d(a, b);
+		double laxb = Math2.magnitude3d(axb);
+		double[] circumcenter = Math2.cross3d(Math2.subtract3d(Math2.scale3d(b, la * la), Math2.scale3d(a, lb * lb)), axb);
+		circumcenter = Math2.add3d(Math2.scale3d(circumcenter, 1 / (2 * laxb * laxb)), verts[2].point);
+		double radius = la * lb * Math2.magnitude3d(Math2.subtract3d(a, b)) / 2 / laxb;
 		circumcircle = new Sphere(radius, circumcenter);
 	}
 	public boolean contains(Vertex v) {
-		double a = MathManager.dot3d(MathManager.cross3d(verts[0].point, verts[1].point), v.point);
-		double b = MathManager.dot3d(MathManager.cross3d(verts[1].point, verts[2].point), v.point);
-		double c = MathManager.dot3d(MathManager.cross3d(verts[2].point, verts[0].point), v.point);
+		double a = Math2.dot3d(Math2.cross3d(verts[0].point, verts[1].point), v.point);
+		double b = Math2.dot3d(Math2.cross3d(verts[1].point, verts[2].point), v.point);
+		double c = Math2.dot3d(Math2.cross3d(verts[2].point, verts[0].point), v.point);
 		return a >= 0 && b >= 0 && c >= 0;
 	}
 	public double area() { // Not really the area. Just the weight.
-		return Math.acos(MathManager.dot3d(verts[0].point, verts[1].point)) * Math.acos(MathManager.dot3d(verts[1].point, verts[2].point));
+		return Math.acos(Math2.dot3d(verts[0].point, verts[1].point)) * Math.acos(Math2.dot3d(verts[1].point, verts[2].point));
 	}
 	public double[] random() {
 		double u = Math.random();
@@ -423,9 +427,9 @@ class Triangle {
 			u = 1 - u;
 			w = 1 - w;
 		}
-		return MathManager.normalize(MathManager.add3d(
-				MathManager.add3d(MathManager.scale3d(verts[0].point, 1 - u), MathManager.scale3d(verts[1].point, u)),
-				MathManager.add3d(MathManager.scale3d(verts[0].point, 1 - w), MathManager.scale3d(verts[2].point, w))));
+		return Math2.normalize(Math2.add3d(
+				Math2.add3d(Math2.scale3d(verts[0].point, 1 - u), Math2.scale3d(verts[1].point, u)),
+				Math2.add3d(Math2.scale3d(verts[0].point, 1 - w), Math2.scale3d(verts[2].point, w))));
 	}
 }
 
@@ -530,11 +534,11 @@ class TriangleTree {
 	public void add(Vertex v) {
 		if (children.size() == 0) {
 			leafs.remove(this);
-			v = new Vertex(MathManager.normalize(
-					MathManager.scale3d(
-					MathManager.add3d(v.point,
-							MathManager.add3d(triangle.verts[0].point,
-									MathManager.add3d(triangle.verts[1].point, triangle.verts[2].point))), 3)));
+			v = new Vertex(Math2.normalize(
+					Math2.scale3d(
+					Math2.add3d(v.point,
+							Math2.add3d(triangle.verts[0].point,
+									Math2.add3d(triangle.verts[1].point, triangle.verts[2].point))), 3)));
 			TriangleTree a = new TriangleTree(triangle.verts[0], triangle.verts[1], v);
 			TriangleTree b = new TriangleTree(triangle.verts[1], triangle.verts[2], v);
 			TriangleTree c = new TriangleTree(triangle.verts[2], triangle.verts[0], v);

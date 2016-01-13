@@ -1,4 +1,6 @@
-public class MathManager{
+package com.kaelri.timelines;
+
+public class Math2{
  public static double[] cross3d(double[] a, double[] b){
   double[] result=new double[3];
   result[0]=a[1]*b[2]-a[2]*b[1];
