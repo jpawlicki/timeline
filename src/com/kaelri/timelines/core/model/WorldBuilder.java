@@ -22,39 +22,33 @@ public class WorldBuilder {
 	public static int height = 700;
 
 	public static int vertexes;
-	public static int vertexesPerFrame;
 
 	public static void main(String[] args) {
-		if (args.length != 2) {
-			System.out.println("Usage: java Main [num_vertexes] [num_vertexes_to_frame]");
+		if (args.length != 1) {
+			System.out.println("Usage: java Main [num_vertexes]");
 			return;
 		}
 		vertexes = new Integer(args[0]);
-		vertexesPerFrame = new Integer(args[1]);
 
-		Canvas c = new Canvas();
-		Frame f = new Frame();
-		f.setSize(width, height);
-		f.add(c);
-		f.setVisible(true);
-		c.createBufferStrategy(3);
+		// Canvas c = new Canvas();
+		// Frame f = new Frame();
+		// f.setSize(width, height);
+		// f.add(c);
+		// f.setVisible(true);
+		// c.createBufferStrategy(3);
 		tree = new TriangleTree();
 
+		for (int i = 6; i < vertexes; i++) {
+			tree.add(new Vertex());
+		}
+
 		/*
-		TriangleTree a = tree;
-		for (int i = 0; i < 8; i++) {
-			System.out.println(a.triangle.contains(new Vertex(Math2.normalize(Math2.add3dall(a.triangle.verts[0].point, a.triangle.verts[1].point, a.triangle.verts[2].point)))));
-			a = a.outside;
-		}*/
+		 * For every triangle, generate one coordinate (the midpoint), attach it to all three vertexes.
+		 * For every vertex, sort the coordinates in clockwise order and call that a polygon.
+		 */
 
-		firstUpdate();
-/*
- * For every triangle, generate one coordinate (the midpoint), attach it to all three vertexes.
- * For every vertex, sort the coordinates in clockwise order and call that a polygon.
- */
-
-		HashMap<Vertex, ArrayList<Vertex>> vCoords = new HashMap<>(); 
-		HashMap<Vertex, HashSet<Vertex>> adjacents = new HashMap<>(); 
+		HashMap<Vertex, ArrayList<Vertex>> vCoords = new HashMap<>();
+		HashMap<Vertex, HashSet<Vertex>> adjacents = new HashMap<>();
 		for (TriangleTree t : tree.leafs.leafs) {
 			Vertex x = new Vertex(Math2.normalize(t.triangle.circumcircle.circumcenter));
 			for (Vertex v : t.triangle.verts) {
@@ -96,106 +90,20 @@ public class WorldBuilder {
 
 		setBiomes(regions);
 
-		while(true) {
-			update();
-			Graphics2D g = (Graphics2D)c.getBufferStrategy().getDrawGraphics();
-			g.setPaint(new Color(0, 0, 0));
-			g.fillRect(0, 0, 900, 900);
-			camera += 0.005;
-			draw(g, regions);
-			g.dispose();
-			c.getBufferStrategy().show();
-			try {
-				Thread.sleep(5);
-			} catch (Exception e) {
-			}
-		}
-	}
-
-	public static void draw(Graphics2D g, ArrayList<Region> regions) {
-		double viewTheta = 1 / 2.0;
-		double[][] rotz = Math2.fetchrot3d(new double[]{0, 0, 1}, camera);
-		double[] viewVector = Math2.matmult(rotz, new double[]{1, 0, 0});
-		for (Region r : regions) {
-			double[][] pp = new double[r.corners.length][];
-			boolean draw = false;
-			for (int i = 0; i < r.corners.length; i++) {
-				pp[i] = r.corners[i].point;
-				if (Math2.dot3d(pp[i], viewVector) > viewTheta) {
-					draw = true;
-				}
-			}
-			if (!draw) continue;
-			pp = Math2.matmult(pp, rotz);
-			g.setPaint(r.color);
-			drawPolySimple(pp, g);
-		}
-	}
-
-	public static void drawPoly(final double[][] poly, Graphics2D g) {
-		boolean first = true;
-		Path2D.Double path = new Path2D.Double();
-		for (int n = 0; n < poly.length; n++) {
-			double[] a = poly[n];
-			double[] b = poly[(n + 1) % poly.length];
-			int x1 = (int)(width / 2 + a[1] * width / (2 - a[0]));
-			int y1 = (int)(height + a[2] * width / (2 - a[0]));
-			int x2 = (int)(width / 2 + b[1] * width / (2 - b[0]));
-			int y2 = (int)(height + b[2] * width / (2 - b[0]));
-			int numPoints = Math.max(2, Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2)) / 2);
-			double[][] points = new double[numPoints][0];
-			points[0] = a;
-			points[numPoints - 1] = b;
-			for (int i = 1; i < numPoints - 1; i++) {
-				points[i] = Math2.normalize(Math2.add3d(
-						Math2.scale3d(a, (numPoints - i) / (numPoints - 1.0)),
-						Math2.scale3d(b, i / (numPoints - 1.0))));
-			}
-			for (int i = 1; i < numPoints; i++) {
-				x2 = (int)(width / 2 + points[i][1] * width / (3 - points[i][0]));
-				y2 = (int)(height / 2 + points[i][2] * width / (3 - points[i][0]));
-				if (first) {
-					first = false;
-					path.moveTo(x1, y1);
-				}
-				path.lineTo(x2, y2);
-				x1 = x2;
-				y1 = y2;
-			}
-		}
-		path.closePath();
-		g.fill(path);
-	}
-
-	public static void drawPolySimple(double[][] poly, Graphics2D g) {
-		Path2D.Double path = new Path2D.Double();
-		path.moveTo(width / 2 + poly[0][1] * width / (2.5 - poly[0][0]), height / 2 + poly[0][2] * width / (2.5 - poly[0][0]));
-		for (int i = 1; i < poly.length; i++) {
-			path.lineTo(width / 2 + poly[i][1] * width / (2.5 - poly[i][0]), height / 2 + poly[i][2] * width / (2.5 - poly[i][0]));
-		}
-		path.closePath();
-		g.fill(path);
-	}
-
-	public static void firstUpdate() {
-		for (int i = 6; i < vertexes; i++)
-			tree.add(new Vertex());
-	}
-
-	public static void update() {
-		for (int i = 0; i < vertexesPerFrame; i++) {
-			double maxArea = 0;
-			TriangleTree max = null;
-			for (TriangleTree t : tree.leafs.leafs) {
-				double a = t.triangle.area();
-				if (a > maxArea) {
-					maxArea = a;
-					max = t;
-				}
-			}
-			double[] add = max.triangle.random();
-			tree.add(new Vertex(add));
-		}
+		// while(true) {
+		// 	update();
+		// 	Graphics2D g = (Graphics2D)c.getBufferStrategy().getDrawGraphics();
+		// 	g.setPaint(new Color(0, 0, 0));
+		// 	g.fillRect(0, 0, 900, 900);
+		// 	camera += 0.005;
+		// 	draw(g, regions);
+		// 	g.dispose();
+		// 	c.getBufferStrategy().show();
+		// 	try {
+		// 		Thread.sleep(5);
+		// 	} catch (Exception e) {
+		// 	}
+		// }
 	}
 
 	private static void setBiomes(ArrayList<Region> regions) {
@@ -238,14 +146,8 @@ public class WorldBuilder {
 		// Set the colors.
 		for (HashSet<Region> c : continents) {
 			boolean oceanic = Math.random() < 0.7;
-			Color color;
-			if (oceanic) {
-				color = new Color((float)Math.random()/10, (float)Math.random()/10, (float)Math.random()/2+0.4f);
-			} else {
-				color = new Color((float)Math.random()/10, (float)Math.random()/2+0.5f, (float)Math.random()/10);
-			}
 			for (Region r : c) {
-				r.color = color;
+				r.biome = oceanic ? Biome.OCEANIC : Biome.GRASSLAND;
 			}
 		}
 	}
@@ -254,94 +156,6 @@ public class WorldBuilder {
 		return regions.get((int)(Math.random() * regions.size()));
 	}
 }
-
-class Region {
-	public Color color;
-	public Vertex[] corners;
-	public ArrayList<Region> adjacents = new ArrayList<>();
-
-	public Region(final Vertex origin, final Vertex... corners) {
-		color = new Color((float)Math.random(), (float)Math.random(), (float)Math.random());
-		final double[] op = origin.point;
-		final double[] zero = Math2.normalize(Math2.subtract3d(corners[0].point, Math2.scale3d(op, Math2.dot3d(op, corners[0].point))));
-		Arrays.sort(corners, new Comparator<Vertex>() {
-			@Override
-			public int compare(Vertex a, Vertex b) {
-				double[] ap = a.point;
-				// Project every vertex onto the plane normal to origin; normalize the projections.
-				ap = Math2.normalize(Math2.subtract3d(ap, Math2.scale3d(op, Math2.dot3d(op, ap))));
-				double adot = Math2.dot3d(zero, ap);
-				double across = Math2.dot3d(op, Math2.cross3d(zero, ap));
-				double aval = 0;
-				if (across >= 0 && adot >= 0) {
-					aval = across;
-				} else if (across >= 0 && adot < 0) {
-					aval = 1 + (1 - across);
-				} else if (across <= 0 && adot < 0) {
-					aval = 2 - across;
-				} else {
-					aval = 4 + across;
-				}
-
-				double[] bp = b.point;
-				bp = Math2.normalize(Math2.subtract3d(bp, Math2.scale3d(op, Math2.dot3d(op, bp))));
-				double bdot = Math2.dot3d(zero, bp);
-				double bcross = Math2.dot3d(op, Math2.cross3d(zero, bp));
-				double bval = 0;
-				if (bcross >= 0 && bdot >= 0) {
-					bval = bcross;
-				} else if (bcross >= 0 && bdot < 0) {
-					bval = 1 + (1 - bcross);
-				} else if (bcross <= 0 && bdot < 0) {
-					bval = 2 - bcross;
-				} else {
-					bval = 4 + bcross;
-				}
-
-				return (int)Math.signum(aval - bval);
-			}
-		});
-		this.corners = corners;
-	}
-
-	public void addAdjacent(Region r) {
-		adjacents.add(r);
-	}
-}
-
-class Vertex {
-	public final double[] point;
-	public Vertex(double... point) {
-		this.point = point;
-	}
-	public Vertex() {
-		double theta = Math.random() * 2 * Math.PI;
-		double u = Math.random() * 2 - 1;
-		double r = Math.sqrt(1 - u * u);
-		point = Math2.normalize(new double[] {r * Math.cos(theta), r * Math.sin(theta), u});
-	}
-}
-/**
-class VertexPair {
-	public final Vertex a;
-	public final Vertex b;
-	public VertexPair(Vertex a, Vertex b) {
-		this.a = a;
-		this.b = b;
-	}
-	public boolean equals(Object other) {
-		if (!other instanceof VertexPair) {
-			return false;
-		} else 
-			return (a == other.a && b == other.b) || (a == other.b && b == other.a);
-		} else {
-			return false;
-		}
-	}
-	public long hashCode() {
-		return a.hashCode() ^ b.hashCode();
-	}
-}*/
 
 class Sphere {
 	public final double radius;
@@ -358,35 +172,12 @@ class Sphere {
 class Triangle {
 	public final Sphere circumcircle;
 	public final Vertex[] verts;
-	public float[] color;
 	protected Triangle() {
 		verts = new Vertex[0];
 		circumcircle = new Sphere(1, new double[]{0, 0, 0});
-		color = getColor();
-	}
-
-	public static float[] getColor() {
-		if (Math.random() < 0.65) {
-			return new float[] { 0.15f, 0.44f, 0.33f };
-		} else {
-			return new float[] { 0.58f, 0.65f, 0.34f };
-		}
-	}
-
-	public static float[] getColor(float[] color) {
-		return new float[] {
-			(float) Math.max(0, Math.min(1, color[0] + (Math.random() - 0.5) * 0.1)),
-			(float) Math.max(0, Math.min(1, color[1] + (Math.random() - 0.5) * 0.1)),
-			(float) Math.max(0, Math.min(1, color[2] + (Math.random() - 0.5) * 0.1)),
-		};
-	}
-
-	public void setColor(float[] color) {
-		this.color = color;
 	}
 
 	public Triangle(Vertex... verts) {
-		color = getColor();
 		this.verts = verts;
 		/*
 		a = A - C
@@ -397,8 +188,7 @@ class Triangle {
 		+ C
 		== circumcenter
 
-		radius ==
-		|a|*|b|*|a - b|/2/|a x b|
+		radius == |a|*|b|*|a - b|/2/|a x b|
 		*/
 		double[] a = Math2.subtract3d(verts[0].point, verts[2].point);
 		double[] b = Math2.subtract3d(verts[1].point, verts[2].point);
@@ -416,9 +206,6 @@ class Triangle {
 		double b = Math2.dot3d(Math2.cross3d(verts[1].point, verts[2].point), v.point);
 		double c = Math2.dot3d(Math2.cross3d(verts[2].point, verts[0].point), v.point);
 		return a >= 0 && b >= 0 && c >= 0;
-	}
-	public double area() { // Not really the area. Just the weight.
-		return Math.acos(Math2.dot3d(verts[0].point, verts[1].point)) * Math.acos(Math2.dot3d(verts[1].point, verts[2].point));
 	}
 	public double[] random() {
 		double u = Math.random();
