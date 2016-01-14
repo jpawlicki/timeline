@@ -6,6 +6,7 @@ public class CanvasProvider {
 	public final Mode mode;
 
 	public static enum Mode {
+		MULTI_MONITOR_FULLSCREEN,
 		FULLSCREEN,
 		BORDERLESS_WINDOWED,
 		WINDOWED,
@@ -36,5 +37,15 @@ public class CanvasProvider {
 			panels.add(p);
 		}
 		return p.
+	}
+
+	private Panel createNewPanel(View view) {
+	}
+
+	// A panel is a logical division of screen space. Each panel belongs to some Frame.
+	// In multi-window mode, each panel may belong to its own Frame.
+	// In multi-monitor fullscreen mode, each panel may belong to a different fullscreen frame.
+	private static class Panel {
+		
 	}
 }
